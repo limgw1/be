@@ -1,12 +1,14 @@
 import os
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, Depends
-from pydantic import BaseModel
 from typing import List, Optional
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, TIMESTAMP, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import sessionmaker, Session, declarative_base
-from datetime import datetime
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, Session
+
+#Schemas and ORM Models import
+from app.models.orm_models import Task
+from app.models.schemas import TaskCreate, TaskOut
+
 
 #Instantiate environment variables
 load_dotenv()
@@ -15,7 +17,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 #DB functionality
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-Base = declarative_base()
+
 
 def get_db():
   db = SessionLocal()
@@ -23,32 +25,6 @@ def get_db():
     yield db
   finally:
     db.close()
-
-#ORM Models
-class Task(Base):
-  __tablename__ = "tasks"
-  id = Column(Integer, primary_key=True, autoincrement=True)
-  title = Column(String, nullable=False)
-  description = Column(Text, nullable=True)
-  due_date = Column(TIMESTAMP, nullable=True)
-  is_completed = Column(Boolean, default=False)
-  created_at = Column(TIMESTAMP, default=datetime.utcnow)
-
-# Schemas
-class TaskCreate(BaseModel):
-  title: str
-  description: Optional[str]
-  due_date: Optional[datetime]
-
-class TaskOut(TaskCreate):
-  id: int
-  is_completed: bool
-  created_at: datetime
-
-  model_config = {
-    "from_attributes": True
-  }
-
 
 #Start FastAPI Instance
 app = FastAPI()
